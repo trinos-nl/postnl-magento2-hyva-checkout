@@ -1,0 +1,31 @@
+<?php
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+?>
+<script>
+<?php /** Generated with hyva-csp-helper.php */ ?>
+function openHoursInitData() {
+    return Object.assign(
+        { open: false },
+        {
+            ['openHoursCurrentState']() {return !this.open},
+            ['openHoursClickPrevent'](event) {return this.open = !this.open},
+        }
+    )
+}
+window.addEventListener(
+    'alpine:init',
+    () => Alpine.data('openHoursInitData', openHoursInitData),
+    {once: true}
+);
+</script>
+<?php if ($hyvaCsp) $hyvaCsp->registerInlineScript() ?>

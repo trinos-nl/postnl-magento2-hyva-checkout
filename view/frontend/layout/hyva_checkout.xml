@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd"
+>
+    <body>
+        <referenceContainer name="magewire.plugin.scripts">
+            <block name="form.field.nl-fields"
+                   template="PostNL_HyvaCheckout::form/field/nl-fields-csp-js.phtml"
+            />
+            <block name="magewire.select-pickup-location"
+                   template="PostNL_HyvaCheckout::magewire/select-pickup-location-csp-js.phtml"
+            />
+        </referenceContainer>
+    </body>
+</page>

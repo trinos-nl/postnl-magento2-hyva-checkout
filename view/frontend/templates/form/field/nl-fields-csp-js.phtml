@@ -1,0 +1,29 @@
+<?php
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+?>
+<script>
+    function postnlAddressValidationAlpine() {
+        return Object.assign(
+            postnlAddressValidation(this.$wire),
+            {
+                ['postnlAddressValidationInit']() {return this.initialize()},
+            }
+        )
+    }
+    window.addEventListener(
+        'alpine:init',
+        () => Alpine.data('postnlAddressValidationAlpine', postnlAddressValidationAlpine),
+        {once: true}
+    );
+</script>
+<?php if ($hyvaCsp) $hyvaCsp->registerInlineScript() ?>

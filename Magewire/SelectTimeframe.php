@@ -156,7 +156,11 @@ class SelectTimeframe extends Component
     public function updatedDeliveryTimeframe($value)
     {
         if ($this->saveDeliveryTimeframe($value)) {
-            $this->emit('shipping_method_selected');
+            $this->emit('shipping_method_selected', [
+                'method'  => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::METHOD_CODE,
+                'carrier' => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::CARRIER_CODE,
+                'code'    => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::SHIPPING_CODE,
+            ]);
             $this->emit('postnl_delivery_selected');
         }
         return $value;
