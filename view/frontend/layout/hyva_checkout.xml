@@ -11,5 +11,10 @@
                    template="PostNL_HyvaCheckout::magewire/select-pickup-location-csp-js.phtml"
             />
         </referenceContainer>
+        <referenceContainer name="before.body.end">
+            <block name="postnl.validations"
+                   template="PostNL_HyvaCheckout::form/field/postcode-nl/form-validation-rules.phtml"
+                   after="-"/>
+        </referenceContainer>
     </body>
 </page>
