@@ -20,8 +20,8 @@ $postcodeField = $form->getField(AddressInterface::POSTCODE);
 $houseNumberField = $form->getField(CheckoutFieldsApi::POSTNL_HOUSE_NUMBER);
 $houseNumberAdditionField = $form->getField(CheckoutFieldsApi::POSTNL_HOUSE_NUMBER_ADDITION);
 ?>
-<div x-data="postnlAddressValidation($wire)"
-     x-init="initialize()"
+<div x-data="postnlAddressValidationAlpine"
+     x-init="postnlAddressValidationInit"
      class="w-full font-medium text-gray-500 space-y-4"
      wire:key="postnl_validation_<?= $escaper->escapeHtmlAttr($form->getNamespace()) ?>"
 >
@@ -41,3 +41,4 @@ $houseNumberAdditionField = $form->getField(CheckoutFieldsApi::POSTNL_HOUSE_NUMB
         </div>
     </div>
 </div>
+<?php if ($hyvaCsp) $hyvaCsp->registerInlineScript() ?>

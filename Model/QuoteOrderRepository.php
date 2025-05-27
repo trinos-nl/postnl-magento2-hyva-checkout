@@ -27,7 +27,7 @@ class QuoteOrderRepository
             if (!$this->cache[$quoteId]) {
                 $this->cache[$quoteId] = $this->orderRepository->create();
             }
-            // Re-check that this order wasn't created an saved, in this case we need a new one.
+            // Re-check that this order wasn't created and saved, in this case we need a new one.
             if ($this->cache[$quoteId]->getOrderId()) {
                 $this->cache[$quoteId] = $this->orderRepository->create();
             }

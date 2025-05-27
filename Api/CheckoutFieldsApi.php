@@ -8,6 +8,7 @@ class CheckoutFieldsApi
      * Well, it's hardcoded a lot in the original extension, so this one might be used only in hyva one abstraction.
      */
     public const CARRIER_CODE = 'tig_postnl';
+    public const METHOD_CODE = 'regular';
     public const SHIPPING_CODE = 'tig_postnl_regular';
 
     /**
