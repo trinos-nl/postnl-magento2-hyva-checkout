@@ -20,7 +20,8 @@ $checkoutView = $viewModels->require(CheckoutView::class);
         return {
             address: {
                 postcode: wire.address.postcode,
-                postnl_housenumber: wire.address.postnl_housenumber
+                postnl_housenumber: wire.address.postnl_housenumber,
+                postnl_housenumber_addition: wire.address.postnl_housenumber_addition
             },
 
             searches: 0,
@@ -88,7 +89,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
 
             getAddressParts: function (address) {
                 const houseNumber = `${address.houseNumber || ''}`,
-                    houseNumberAddition = wire.address.postnl_housenumber_addition;
+                    houseNumberAddition = this.address.postnl_housenumber_addition;
 
                 return {
                     street: address.streetName,
@@ -110,6 +111,8 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                             }
                             else if (ref === "<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_HOUSE_NUMBER) ?>") {
                                 return !value || this.houseNumberRegex.test(value);
+                            } else if (ref === "<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_HOUSE_NUMBER_ADDITION) ?>") {
+                                return true;
                             }
                             return false;
                         },
@@ -123,8 +126,10 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                         validateDifference: (ref, newValue, previousValue) => {
                             return newValue !== previousValue
                         },
-                        validateCompletion: () => {
-                            return Object.values(this.address).every(value => typeof value === 'string' && value.trim() !== '')
+                        validateCompletion: (ref) => {
+                            return Object.values(this.address).every(
+                                value => typeof value === 'string' && (value.trim() !== '' || ref === 'postnl_housenumber_addition')
+                            )
                         }
                     }
                 }
