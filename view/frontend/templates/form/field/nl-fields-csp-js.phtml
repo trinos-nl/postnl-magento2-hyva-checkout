@@ -26,4 +26,4 @@ use Magento\Framework\View\Element\Template;
         {once: true}
     );
 </script>
-<?php if ($hyvaCsp) $hyvaCsp->registerInlineScript() ?>
+<?php if (isset($hyvaCsp)) $hyvaCsp->registerInlineScript() ?>
