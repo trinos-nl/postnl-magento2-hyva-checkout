@@ -128,7 +128,8 @@ class AddressChanges extends AbstractEntityFormModifier
 
         // Adjust postcode to our feelings
         $postcodeField
-            ->setAttribute('x-model', 'address.'. AddressInterface::POSTCODE)
+            ->setAttribute(':value', 'address.'. AddressInterface::POSTCODE)
+            ->setAttribute('@change', 'setPostcode')
             ->setAttribute('x-ref', AddressInterface::POSTCODE);
 
         // Create custom data carrier fields and hide them, so we can render both manually.
@@ -141,7 +142,8 @@ class AddressChanges extends AbstractEntityFormModifier
             ]
         ])
             ->setAttribute('x-ref', CheckoutFieldsApi::POSTNL_HOUSE_NUMBER)
-            ->setAttribute('x-model', 'address.'. CheckoutFieldsApi::POSTNL_HOUSE_NUMBER)
+            ->setAttribute('@change', 'setHouseNumber')
+            ->setAttribute(':value', 'address.'. CheckoutFieldsApi::POSTNL_HOUSE_NUMBER)
             ->setValidationRule('validate-house-number')
             ->hide();
 
@@ -154,7 +156,8 @@ class AddressChanges extends AbstractEntityFormModifier
             ]
         ])
             ->setAttribute('x-ref', CheckoutFieldsApi::POSTNL_HOUSE_NUMBER_ADDITION)
-            ->setAttribute('x-model', 'address.'. CheckoutFieldsApi::POSTNL_HOUSE_NUMBER_ADDITION)
+            ->setAttribute('@change', 'setHouseNumberAddition')
+            ->setAttribute(':value', 'address.'. CheckoutFieldsApi::POSTNL_HOUSE_NUMBER_ADDITION)
             ->hide();
 
         // Check if we can load data from the relatives

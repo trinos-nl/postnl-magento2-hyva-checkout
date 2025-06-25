@@ -30,10 +30,24 @@ $checkoutView = $viewModels->require(CheckoutView::class);
 
             initialize: function() {
                 options = Object.assign(this.getOptions(), options)
+            },
 
-                Object.keys(this.address).forEach((key) => this.$watch(`address.${ key }`, function(newValue, previousValue) {
-                    this.onChangeInput(key, newValue, previousValue)
-                }.bind(this)))
+            setHouseNumber() {
+                const newValue = this.$event.target.value;
+                this.onChangeInput('postnl_housenumber', newValue, this.address.postnl_housenumber);
+                this.address.postnl_housenumber = newValue;
+            },
+
+            setHouseNumberAddition() {
+                const newValue = this.$event.target.value;
+                this.onChangeInput('postnl_housenumber_addition', newValue, this.address.postnl_housenumber_addition);
+                this.address.postnl_housenumber_addition = newValue;
+            },
+
+            setPostcode() {
+                const newValue = this.$event.target.value;
+                this.onChangeInput('postcode', newValue, this.address.postcode);
+                this.address.postcode = newValue;
             },
 
             onChangeInput: async function(ref, newValue, previousValue) {
