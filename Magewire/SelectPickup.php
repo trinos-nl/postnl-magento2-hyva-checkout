@@ -214,6 +214,7 @@ class SelectPickup extends Component
 
         $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
         try {
+            $shipping->setCollectShippingRates(true);
             $this->orderSave->saveDeliveryOption($postnlOrder, $request);
         } catch (LocalizedException $e) {
             throw $e;
