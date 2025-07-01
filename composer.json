@@ -1,6 +1,6 @@
 {
     "name": "postnl/module-hyva-checkout",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "PostNL Magento 2 compatibility extension with Hyva Checkout.",
     "type": "magento2-module",
     "require": {
