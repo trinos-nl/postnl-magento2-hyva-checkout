@@ -141,9 +141,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                             return newValue !== previousValue
                         },
                         validateCompletion: (ref) => {
-                            return Object.values(this.address).every(
-                                value => typeof value === 'string' && (value.trim() !== '' || ref === 'postnl_housenumber_addition')
-                            )
+                            return Array.prototype.every.call(this.address, (value, index) => typeof value === 'string' && (value.trim() !== '' || index === 'postnl_housenumber_addition'));
                         }
                     }
                 }
