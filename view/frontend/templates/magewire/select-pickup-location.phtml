@@ -79,7 +79,7 @@ $shippingViewModel = $viewModels->require(ShippingView::class);
                                         <div x-data="openHoursInitData" class="tig-postnl-pickup-hours-list text-postnl-gray-darker text-left mt-2"
                                              id="location-dates-<?= $escaper->escapeHtmlAttr($location->getValue()) ?>">
                                             <!-- OPENING HOURS -->
-                                            <div class="tig-postnl-pickup-hours-link text-postnl-orange hover:underline"
+                                            <div class="tig-postnl-pickup-hours-link text-postnl-orange-primary font-bold hover:underline"
                                                  @click.prevent="openHoursClickPrevent">
                                             <span x-cloak x-show="openHoursCurrentState" class="show cursor-pointer">
                                                 <?= $escaper->escapeHtml(__('Show opening hours')); ?>
