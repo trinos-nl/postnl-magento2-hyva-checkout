@@ -1,7 +1,6 @@
 <?php
 namespace PostNL\HyvaCheckout\Magewire;
 
-use AllowDynamicProperties;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
@@ -16,7 +15,7 @@ use TIG\PostNL\Service\Shipping\BoxablePackets;
 use TIG\PostNL\Service\Shipping\InternationalPacket;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
 
-#[AllowDynamicProperties] class ShippingMethod extends Component implements EvaluationInterface
+class ShippingMethod extends Component implements EvaluationInterface
 {
     public $type = null;
 
