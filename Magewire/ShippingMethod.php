@@ -1,6 +1,7 @@
 <?php
 namespace PostNL\HyvaCheckout\Magewire;
 
+use AllowDynamicProperties;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
@@ -13,8 +14,9 @@ use TIG\PostNL\Config\Provider\ShippingOptions;
 use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Shipping\BoxablePackets;
 use TIG\PostNL\Service\Shipping\InternationalPacket;
+use TIG\PostNL\Service\Shipping\LetterboxPackage;
 
-class ShippingMethod extends Component implements EvaluationInterface
+#[AllowDynamicProperties] class ShippingMethod extends Component implements EvaluationInterface
 {
     public $type = null;
 
@@ -41,6 +43,8 @@ class ShippingMethod extends Component implements EvaluationInterface
     private InternationalPacket $internationalPacket;
     private PickupValidator $pickupValidator;
 
+    private LetterboxPackage $letterboxPackage;
+
     public function __construct(
         CheckoutSession $checkoutSession,
         QuoteOrderRepository $postnlOrderRepository,
@@ -48,7 +52,8 @@ class ShippingMethod extends Component implements EvaluationInterface
         ShippingOptions $shippingOptions,
         BoxablePackets $boxablePackets,
         InternationalPacket $internationalPacket,
-        PickupValidator $pickupValidator
+        PickupValidator $pickupValidator,
+        LetterboxPackage $letterboxPackage
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->postnlOrderRepository = $postnlOrderRepository;
@@ -57,6 +62,7 @@ class ShippingMethod extends Component implements EvaluationInterface
         $this->boxablePackets = $boxablePackets;
         $this->internationalPacket = $internationalPacket;
         $this->pickupValidator = $pickupValidator;
+        $this->letterboxPackage = $letterboxPackage;
     }
 
     public function canDisplayPickup(): bool
@@ -64,13 +70,21 @@ class ShippingMethod extends Component implements EvaluationInterface
         $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
         $countryId = $shippingAddress->getCountryId();
         $result = $this->pickupValidator->isPickupEnabledForCountry($countryId);
-        if ($result && $countryId === 'BE') {
-            $products = $this->checkoutSession->getQuote()->getAllItems();
-            // Disable pickup locations for Packets
-            if ($this->internationalPacket->canFixInTheBox($products) || $this->boxablePackets->canFixInTheBox($products)) {
-                $result = false;
-            }
+        $products = $this->checkoutSession->getQuote()->getAllItems();
+
+        // Disable pickup locations for Packets
+        if ($result && $countryId === 'BE' &&
+            ($this->internationalPacket->canFixInTheBox($products) || $this->boxablePackets->canFixInTheBox($products))
+        ) {
+            $result = false;
         }
+
+        if ($result && $countryId === 'NL' &&
+            $this->letterboxPackage->isLetterboxPackage($products)
+        ) {
+            return false;
+        }
+
         if ($result && !$this->pickupValidator->isAddressFilled($shippingAddress)) {
             $result = false;
         }
