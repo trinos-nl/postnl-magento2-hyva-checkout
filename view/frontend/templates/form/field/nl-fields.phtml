@@ -25,7 +25,10 @@ $houseNumberAdditionField = $form->getField(CheckoutFieldsApi::POSTNL_HOUSE_NUMB
      class="w-full font-medium text-gray-500 space-y-4"
      wire:key="postnl_validation_<?= $escaper->escapeHtmlAttr($form->getNamespace()) ?>"
 >
-    <?= $block->getChildHtml('messenger') ?>
+    <!-- Custom inline error message -->
+    <div x-show="errorMessage" class="bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded">
+        <p x-text="errorMessage"></p>
+    </div>
 
     <div class="flex flex-row gap-4">
         <div class="flex-1">
