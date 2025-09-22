@@ -23,3 +23,16 @@
 .tig-postnl-pickup-label {
     grid-template-columns: min-content auto auto auto;
 }
+
+.hyva_checkout-index-index {
+    &.checkout-onepage {
+        .postnl-validation-block {
+            .field {
+                @apply h-full flex flex-col justify-between;
+                label {
+                    @apply mb-1;
+                }
+            }
+        }
+    }
+}

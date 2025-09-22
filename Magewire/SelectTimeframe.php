@@ -14,6 +14,7 @@ use TIG\PostNL\Service\Action\OrderSave;
 use TIG\PostNL\Service\Order\FeeCalculator;
 use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Timeframe\Resolver;
+use TIG\PostNL\Service\Shipping\LetterboxPackage;
 
 class SelectTimeframe extends Component
 {
@@ -41,6 +42,7 @@ class SelectTimeframe extends Component
     private Data $priceHelper;
     private ShippingOptions $shippingOptions;
     private PickupValidator $pickupValidator;
+    private LetterboxPackage $letterboxPackage;
 
     public function __construct(
         CheckoutSession $checkoutSession,
@@ -50,7 +52,8 @@ class SelectTimeframe extends Component
         OrderSave $orderSave,
         Data $priceHelper,
         ShippingOptions $shippingOptions,
-        PickupValidator $pickupValidator
+        PickupValidator $pickupValidator,
+        LetterboxPackage $letterboxPackage
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->timeframeResolver = $timeframeResolver;
@@ -60,6 +63,7 @@ class SelectTimeframe extends Component
         $this->priceHelper = $priceHelper;
         $this->shippingOptions = $shippingOptions;
         $this->pickupValidator = $pickupValidator;
+        $this->letterboxPackage = $letterboxPackage;
     }
 
     public function boot(): void
@@ -106,14 +110,15 @@ class SelectTimeframe extends Component
     public function getTimeframes(): array
     {
         $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
+
         $data = [
             'country' => $shippingAddress->getCountryId(),
             'street' => $shippingAddress->getStreet(),
             'postcode' => $shippingAddress->getPostcode(),
             'city' => $shippingAddress->getCity(),
         ];
-        $timeframes = $this->convertResponse($this->timeframeResolver->processTimeframes($data));
-        return $timeframes;
+
+        return $this->convertResponse($this->timeframeResolver->processTimeframes($data));
     }
 
     private function checkShippingSelected(\Magento\Quote\Api\Data\CartInterface $quote): bool
@@ -137,13 +142,20 @@ class SelectTimeframe extends Component
             } else {
                 // Default display - check if pickup should be selected first
                 $countryId = $shipping->getAddress()->getCountryId();
-                if ($this->pickupValidator->isDefaultPickupActive($countryId)) {
-                    // Pickup is default - do not update anything
-                } else {
+
+                if ($countryId === 'NL') {
+                    $products = $this->checkoutSession->getQuote()->getAllItems();
+
+                    if ($this->letterboxPackage->isLetterboxPackage($products)) {
+                        $this->deliverySelected = true;
+                    }
+                    // Pickup is not default - update
+                } elseif (!$this->pickupValidator->isDefaultPickupActive($countryId)) {
                     $this->deliverySelected = true;
                 }
             }
         }
+
         return true;
     }
 

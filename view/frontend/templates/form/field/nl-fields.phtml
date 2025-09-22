@@ -22,21 +22,24 @@ $houseNumberAdditionField = $form->getField(CheckoutFieldsApi::POSTNL_HOUSE_NUMB
 ?>
 <div x-data="postnlAddressValidationAlpine"
      x-init="postnlAddressValidationInit"
-     class="w-full font-medium text-gray-500 space-y-4"
+     class="postnl-validation-block w-full font-medium text-gray-500 space-y-4"
      wire:key="postnl_validation_<?= $escaper->escapeHtmlAttr($form->getNamespace()) ?>"
 >
-    <?= $block->getChildHtml('messenger') ?>
+    <!-- Custom inline error message -->
+    <div x-show="errorMessage" class="bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded">
+        <p x-text="errorMessage"></p>
+    </div>
 
-    <div class="flex flex-row gap-4">
-        <div class="flex-1">
+    <div class="flex-container flex flex-row gap-4">
+        <div class="flex-block flex-1">
             <?= /* @noEscape */ $postcodeField->render() ?>
         </div>
 
-        <div class="flex-1">
+        <div class="flex-block flex-1">
             <?= /* @noEscape */ $houseNumberField->render() ?>
         </div>
 
-        <div class="flex-1">
+        <div class="flex-block flex-1">
             <?= /* @noEscape */ $houseNumberAdditionField->render() ?>
         </div>
     </div>
