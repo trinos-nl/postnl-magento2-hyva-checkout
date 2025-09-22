@@ -10,11 +10,13 @@ module.exports = {
                         lighter: '#00A1E1'
                     },
                     orange: {
+                        primary: '#F56900',
                         darker: '#ED7000',
                         DEFAULT: '#FF8D00',
                         lighter: '#FFAD00'
                     },
                     gray: {
+                        dark: '#515165',
                         darker: '#27324C',
                         'middle': '#66728A',
                         DEFAULT: '#ADB5C5',

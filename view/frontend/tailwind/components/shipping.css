@@ -13,7 +13,11 @@
 }
 
 .postnl-type-selection {
-    @apply flex justify-between p-5 border-2 border-postnl-gray-lighter rounded-lg cursor-pointer bg-white hover:border-postnl-orange text-postnl-gray-middle;
+    @apply flex justify-between p-5 border-2 border-postnl-gray-lighter rounded-lg cursor-pointer bg-white hover:border-postnl-orange text-postnl-gray-dark font-bold;
+}
+
+.tig-postnl-pickup-hours-link {
+    font-size: 19px;
 }
 
 .tig-postnl-pickup-label {
