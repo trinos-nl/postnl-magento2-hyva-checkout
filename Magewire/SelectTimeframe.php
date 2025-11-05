@@ -2,6 +2,9 @@
 
 namespace PostNL\HyvaCheckout\Magewire;
 
+use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
+use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
+use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Pricing\Helper\Data;
@@ -16,7 +19,7 @@ use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Timeframe\Resolver;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
 
-class SelectTimeframe extends Component
+class SelectTimeframe extends Component implements EvaluationInterface
 {
     public bool $deliverySelected = false;
 
@@ -351,4 +354,12 @@ class SelectTimeframe extends Component
         return $type;
     }
 
+    public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
+    {
+        if ($this->isOpen() && !$this->deliveryTimeframe) {
+            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
+        }
+
+        return $resultFactory->createSuccess();
+    }
 }

@@ -2,6 +2,9 @@
 
 namespace PostNL\HyvaCheckout\Magewire;
 
+use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
+use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
+use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Exception\LocalizedException;
 use Magewirephp\Magewire\Component;
@@ -13,7 +16,7 @@ use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
 use TIG\PostNL\Service\Shipping\PickupLocations;
 
-class SelectPickup extends Component
+class SelectPickup extends Component implements EvaluationInterface
 {
     private const LOCATIONS_LIMIT = 5;
     public bool $pickupSelected = false;
@@ -272,4 +275,12 @@ class SelectPickup extends Component
         }
     }
 
+    public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
+    {
+        if ($this->isOpen() && !$this->locationId) {
+            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
+        }
+
+        return $resultFactory->createSuccess();
+    }
 }
