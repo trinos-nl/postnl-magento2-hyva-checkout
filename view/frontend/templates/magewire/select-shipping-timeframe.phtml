@@ -61,7 +61,7 @@ $shippingViewModel = $viewModels->require(ShippingView::class);
         <?php if ($magewire->canUseStatedAddressOnly()): ?>
             <div class="extra-service-container my-8">
                 <div class="extra-service-header bg-postnl-gray-darker text-white py-3 px-4">
-                    <span class="extra-service-label uppercase"><?= $escaper->escapeHtml('Extra service') ?></span>
+                    <span class="extra-service-label uppercase"><?= $escaper->escapeHtml(__('Extra service')) ?></span>
                 </div>
 
                 <div class="only-stated-address flex items-center p-4 border border-postnl-gray-lighter">
