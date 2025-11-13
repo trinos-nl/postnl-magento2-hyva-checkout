@@ -5,14 +5,34 @@
         }
     }
 }
+
 .shipping-timeframe {
     &:first-child {
         @apply border-t-0;
     }
 }
+
 .postnl-type-selection {
-    @apply flex justify-between p-5 border-2 border-postnl-gray-lighter rounded-lg cursor-pointer bg-white hover:border-postnl-orange text-postnl-gray-middle;
+    @apply flex justify-between p-5 border-2 border-postnl-gray-lighter rounded-lg cursor-pointer bg-white hover:border-postnl-orange text-postnl-gray-dark font-bold;
 }
+
+.tig-postnl-pickup-hours-link {
+    font-size: 19px;
+}
+
 .tig-postnl-pickup-label {
     grid-template-columns: min-content auto auto auto;
+}
+
+.hyva_checkout-index-index {
+    &.checkout-onepage {
+        .postnl-validation-block {
+            .field {
+                @apply h-full flex flex-col justify-between;
+                label {
+                    @apply mb-1;
+                }
+            }
+        }
+    }
 }
