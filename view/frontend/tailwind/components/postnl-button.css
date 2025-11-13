@@ -1,0 +1,23 @@
+#cart-drawer .postnl-flex-wrapper {
+    @apply px-6 mb-2;
+}
+
+.cart-summary .postnl-flex-wrapper {
+    @apply pb-6;
+}
+
+.hyva_checkout-index-index .postnl-flex-wrapper {
+    @apply pt-2 pb-6;
+}
+
+#postnl-login-button:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.tooltip-text {
+    transform: translate(62px, 100%);
+}
+
+.tooltip-icon:hover .tooltip-text {
+    @apply block z-[100];
+}

@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="hyva_checkout_components"/>
     <body>
         <referenceBlock name="entity-form.field-renderers">
             <block name="form-field.postnl_container.address"
@@ -23,5 +25,30 @@
             />
         </referenceContainer>
 
+        <block name="before_email"
+               template="PostNL_HyvaCheckout::cart/button.phtml"
+               before="checkout.cart.methods.bottom">
+            <arguments>
+                <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
+                <argument name="hyva_js_block_dependencies" xsi:type="array">
+                    <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
+                </argument>
+            </arguments>
+        </block>
+
+        <block name="before_detail"
+               template="PostNL_HyvaCheckout::cart/button.phtml"
+               before="checkout.cart.methods.bottom">
+            <arguments>
+                <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
+                <argument name="hyva_js_block_dependencies" xsi:type="array">
+                    <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
+                </argument>
+            </arguments>
+        </block>
+
+        <move element="before_email" destination="checkout.guest-details.section" before="-"/>
+        <move element="before_detail" destination="checkout.shipping-details.section"
+              after="checkout.shipping-details.title"/>
     </body>
 </page>
