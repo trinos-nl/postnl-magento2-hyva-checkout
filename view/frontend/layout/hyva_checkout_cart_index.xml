@@ -9,9 +9,6 @@
                    ifconfig="tig_postnl/fillin/settings/cart/enabled">
                 <arguments>
                     <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
-                    <argument name="hyva_js_block_dependencies" xsi:type="array">
-                        <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
-                    </argument>
                 </arguments>
             </block>
             <block name="cart_after"
@@ -20,9 +17,6 @@
                    ifconfig="tig_postnl/fillin/settings/cart/enabled">
                 <arguments>
                     <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
-                    <argument name="hyva_js_block_dependencies" xsi:type="array">
-                        <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
-                    </argument>
                 </arguments>
             </block>
         </referenceContainer>

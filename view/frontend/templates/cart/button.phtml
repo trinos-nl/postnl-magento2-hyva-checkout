@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** @var Magento\Framework\View\Element\Template $block */
 /** @var Magento\Framework\Escaper $escaper */
 /** @var TIG\PostNL\ViewModel\FillIn $viewModel */
+/** @var $hyvaCsp Hyva\Theme\ViewModel\HyvaCsp */
 
 $viewModel = $block->getViewModel();
 $layoutName = $block->getNameInLayout();
@@ -11,6 +12,9 @@ $layoutName = $block->getNameInLayout();
 $isMinicart = str_contains($layoutName, 'buttons');
 $isCart = str_contains($layoutName, 'cart');
 $isCheckout = str_contains($layoutName, 'before_');
+
+$defaultCountry = $viewModel->getDefaultCountry();
+$shippingCountry = $viewModel->getShippingCountry();
 
 $configPosition = $isMinicart
     ? $viewModel->getMinicartPosition()
@@ -34,14 +38,14 @@ $fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
 ?>
 
 <?php if (!$isLoggedIn && $shouldRender): ?>
-    <div x-data="postnlComponent" x-init="initialize" @private-content-loaded.window="receiveSectionData($event.detail.data)">
+    <div x-data="postnlComponent" x-init="initialize" @private-content-loaded.window="receiveSectionData">
         <template x-if="isVisible">
             <div class="postnl-flex-wrapper" id="postnl-component">
                 <div class="button--postnl-container" x-show="isVisible">
                     <button id="postnl-login-button" class="w-full min-h-[35px] max-h-[60px] bg-postnl-orange-primary text-white flex items-center justify-center gap-3 px-2 py-3 rounded-lg font-semibold text-lg cursor-pointer hover:shadow-lg hover:bg-postnl-orange-darker focus:bg-postnl-orange-darker" aria-label="<?= $escaper->escapeHtmlAttr(__('Complete with PostNL')) ?>" type="button" x-on:click="handleClick" :disabled="isDisabled">
                         <span id="postnl-login-button__text" class="w-full flex justify-center items-center gap-2 font-semibold opacity-1 transition-colors duration-200">
                             <span id="postnl-login-button__first-text" class="align-middle">
-                                <img loading="lazy" id="postnl-logo" src="<?= $block->getViewFileUrl('PostNL_FillIn::images/postnl-logo.png') ?>" alt="PostNL" width="40" height="40"/>
+                                <img loading="lazy" id="postnl-logo" src="<?= $block->getViewFileUrl('PostNL_HyvaCheckout::images/postnl-logo.png') ?>" alt="PostNL" width="40" height="40"/>
                             </span>
                             <span id="postnl-login-button__second-text" class="pl-1"><?= $escaper->escapeHtml(__('Complete with PostNL')) ?></span>
                         </span>
@@ -51,7 +55,7 @@ $fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
                         <p class="heading flex justify-center gap-1 text-sm font-normal m-0">
                             <?= $escaper->escapeHtml(__('Fill in the details with PostNL')) ?>
                             <span class="tooltip-icon relative cursor-pointer">
-                                <img loading="lazy" src="<?= $block->getViewFileUrl('PostNL_FillIn::images/tooltip.png') ?>" alt="<?= $escaper->escapeHtmlAttr(__('Fill in the details with PostNL')) ?>" width="16" height="16"/>
+                                <img loading="lazy" src="<?= $block->getViewFileUrl('PostNL_HyvaCheckout::images/tooltip.png') ?>" alt="<?= $escaper->escapeHtmlAttr(__('Fill in the details with PostNL')) ?>" width="16" height="16"/>
                                 <span class="tooltip-text hidden min-w-[320px] absolute bottom-[-10px] right-0 bg-postnl-gray-darker text-white text-center transition-opacity duration-300 p-2 rounded-lg text-sm shadow-lg z-[-1]">
                                     <?= $escaper->escapeHtml(__("We'll copy your name and address from your PostNL account. So you don't have to enter them again!")) ?>
                                 </span>
@@ -63,3 +67,185 @@ $fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
         </template>
     </div>
 <?php endif; ?>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('postnlComponent', () => ({
+                fillInUrl: window.location.origin + '/postnl/fillin/index',
+                isVisible: false,
+                isDisabled: false,
+                isLoading: false,
+                country_id: '<?= $shippingCountry ?>',
+                defaultCountry: '<?= $defaultCountry ?>',
+                redirectUrl: '',
+                cart: null,
+                cartCount: 0,
+                reloadTimer: null,
+
+                // Initialization function on x-init
+                initialize() {
+                    if (!window.hyva) window.hyva = {};
+                    window.dispatchEvent(new Event('reload-customer-section-data'));
+
+                    document.querySelector('.product-info button, .items-start button')?.addEventListener('click', async () => {
+                        try {
+                            await fetch('/checkout/cart/add', {
+                                method: 'POST',
+                                body: new FormData(document.querySelector('.product-info button, .items-start button')),
+                            });
+                        } catch (e) {
+                            console.error('Add to Cart failed', e);
+                        }
+
+                        window.dispatchEvent(new Event('reload-customer-section-data'));
+                    });
+
+                    if (document.body.classList.contains('checkout-cart-index')) {
+                        this.initCartData();
+                        this.observeCountrySelect();
+                    } else if (document.body.classList.contains('hyva_checkout-index-index')) {
+                        this.observeCountrySelect();
+                    } else {
+                        this.initCartData();
+                    }
+                },
+
+                // Listen for 'private-content-loaded' to update cart data, and initial cart data load
+                initCartData() {
+                    window.addEventListener('private-content-loaded', (event) => {
+                        this.receiveSectionData(event.detail.data);
+                    });
+
+                    window.dispatchEvent(new Event('reload-customer-section-data'));
+                },
+
+                receiveSectionData(data) {
+                    if (data && data.cart) {
+                        this.cart = data.cart;
+                        this.cartCount = data.cart.summary_count || 0;
+                        this.isVisible = this.cartCount >= 1;
+                    }
+                },
+
+                refreshCartData() {
+                    clearTimeout(this.reloadTimer);
+                    this.reloadTimer = setTimeout(() => {
+                        window.dispatchEvent(new Event('reload-customer-section-data'));
+                    }, 200);
+                },
+
+                // Observe the country select dropdown for changes in the cart page or checkout
+                observeCountrySelect() {
+
+                    let initialCountryChecked = false;
+
+                    this.$watch('country_id', (newValue, oldValue) => {
+                        if (newValue !== oldValue) {
+                            this.toggleVisibility(newValue);
+                        }
+                    });
+
+                    const check = () => {
+                        const select = document.querySelector('select[name="country_id"]');
+
+                        if (select && select.offsetParent !== null) {
+                            if (!initialCountryChecked) {
+                                this.country_id = select.value;
+                                initialCountryChecked = true;
+                                this.toggleVisibility(select.value);
+                            }
+
+                            select.addEventListener('change', () => {
+                                this.country_id = select.value;
+                                this.toggleVisibility(select.value);
+                            });
+                        } else {
+                            setTimeout(check, 300);
+                        }
+                    };
+
+                    check();
+                },
+
+                // Method to handle visibility logic
+                updateVisibility() {
+                    if (!this.country_id || this.country_id !== 'NL') {
+                        this.isVisible = this.defaultCountry === 'NL';
+                    } else {
+                        this.isVisible = true;
+                    }
+                },
+
+                // Toggle visibility based on selected country
+                toggleVisibility(value) {
+                    this.isVisible = value === 'NL';
+                },
+
+                // Handle the button click to complete the action
+                handleClick() {
+                    if (!this.fillInUrl) return;
+
+                    this.isLoading = true;
+                    this.isDisabled = true;
+
+                    fetch(this.fillInUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            country_id: this.country_id || this.defaultCountry,
+                        }),
+                    })
+                        .then(async response => {
+                            if (!response.ok) {
+                                const text = await response.text();
+                                console.error('Bad response:', text);
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+
+                            const contentType = response.headers.get('Content-Type') || '';
+                            if (!contentType.includes('application/json')) {
+                                const text = await response.text();
+                                console.error('Unexpected non-JSON response:', text);
+                                throw new Error('Expected JSON response from server');
+                            }
+
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.redirect_url) {
+                                window.location.href = data.redirect_url;
+                            } else if (data.success) {
+                                console.log('Success:', data.message || 'Action completed successfully.');
+                            } else {
+                                console.warn('Unexpected data structure:', data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Fetch Error:', error);
+                        })
+                        .finally(() => {
+                            this.isLoading = false;
+                            this.isDisabled = false;
+                        });
+                },
+
+                // Handle success response
+                handleSuccess(response) {
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    }
+                },
+
+                // Handle error response
+                handleError(error) {
+                    console.error('Error:', error);
+                }
+
+            }));
+        });
+    </script>
+
+<?php if (isset($hyvaCsp)) $hyvaCsp->registerInlineScript() ?>

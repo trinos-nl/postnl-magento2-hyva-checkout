@@ -18,6 +18,13 @@
         </arguments>
     </type>
 
+    <type name="PostNL\FillIn\ViewModel\FillIn">
+        <arguments>
+            <argument name="customerSession" xsi:type="object">Magento\Customer\Model\Session\Proxy</argument>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+
     <type name="Hyva\Checkout\ViewModel\Checkout\Shipping\MethodList">
         <plugin name="extend_shipping_price"
                 type="PostNL\HyvaCheckout\Plugin\HyvaCheckout\ViewModel\MethodListPlugin"
