@@ -42,12 +42,12 @@ $fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
         <template x-if="isVisible">
             <div class="postnl-flex-wrapper" id="postnl-component">
                 <div class="button--postnl-container" x-show="isVisible">
-                    <button id="postnl-login-button" class="w-full min-h-[35px] max-h-[60px] bg-postnl-orange-primary text-white flex items-center justify-center gap-3 px-2 py-3 rounded-lg font-semibold text-lg cursor-pointer hover:shadow-lg hover:bg-postnl-orange-darker focus:bg-postnl-orange-darker" aria-label="<?= $escaper->escapeHtmlAttr(__('Complete with PostNL')) ?>" type="button" x-on:click="handleClick" :disabled="isDisabled">
+                    <button id="postnl-login-button" class="w-full min-h-[35px] max-h-[60px] bg-postnl-orange-primary text-white flex items-center justify-center gap-3 px-2 py-3 rounded-lg font-semibold text-lg cursor-pointer hover:shadow-lg hover:bg-postnl-orange-darker focus:bg-postnl-orange-darker" aria-label="<?= $escaper->escapeHtmlAttr(__('Fill in with PostNL.')) ?>" type="button" x-on:click="handleClick" :disabled="isDisabled">
                         <span id="postnl-login-button__text" class="w-full flex justify-center items-center gap-2 font-semibold opacity-1 transition-colors duration-200">
                             <span id="postnl-login-button__first-text" class="align-middle">
                                 <img loading="lazy" id="postnl-logo" src="<?= $block->getViewFileUrl('PostNL_HyvaCheckout::images/postnl-logo.png') ?>" alt="PostNL" width="40" height="40"/>
                             </span>
-                            <span id="postnl-login-button__second-text" class="pl-1"><?= $escaper->escapeHtml(__('Complete with PostNL')) ?></span>
+                            <span id="postnl-login-button__second-text" class="pl-1"><?= $escaper->escapeHtml(__('Fill in with PostNL.')) ?></span>
                         </span>
                     </button>
 
@@ -57,7 +57,7 @@ $fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
                             <span class="tooltip-icon relative cursor-pointer">
                                 <img loading="lazy" src="<?= $block->getViewFileUrl('PostNL_HyvaCheckout::images/tooltip.png') ?>" alt="<?= $escaper->escapeHtmlAttr(__('Fill in the details with PostNL')) ?>" width="16" height="16"/>
                                 <span class="tooltip-text hidden min-w-[320px] absolute bottom-[-10px] right-0 bg-postnl-gray-darker text-white text-center transition-opacity duration-300 p-2 rounded-lg text-sm shadow-lg z-[-1]">
-                                    <?= $escaper->escapeHtml(__("We'll copy your name and address from your PostNL account. So you don't have to enter them again!")) ?>
+                                    <?= $escaper->escapeHtml(__("Your name and address will be filled in automatically through your PostNL account. This way, you don't have to fill out the form yourself!")) ?>
                                 </span>
                             </span>
                         </p>
