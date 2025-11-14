@@ -1,0 +1,65 @@
+<?php
+declare(strict_types=1);
+
+/** @var Magento\Framework\View\Element\Template $block */
+/** @var Magento\Framework\Escaper $escaper */
+/** @var TIG\PostNL\ViewModel\FillIn $viewModel */
+
+$viewModel = $block->getViewModel();
+$layoutName = $block->getNameInLayout();
+
+$isMinicart = str_contains($layoutName, 'buttons');
+$isCart = str_contains($layoutName, 'cart');
+$isCheckout = str_contains($layoutName, 'before_');
+
+$configPosition = $isMinicart
+    ? $viewModel->getMinicartPosition()
+    : ($isCheckout
+        ? $viewModel->getCheckoutPosition()
+        : $viewModel->getCartPosition());
+
+$isLoggedIn = $viewModel->isLoggedIn();
+
+$shouldRender = false;
+
+if ($isMinicart) {
+    $shouldRender = $viewModel->canDisplayInMinicart($layoutName);
+} elseif ($isCheckout) {
+    $shouldRender = $viewModel->canDisplayInCheckout($layoutName);
+} elseif ($isCart) {
+    $shouldRender = $viewModel->canDisplayInCart($layoutName);
+}
+
+$fillInUrl = $escaper->escapeUrl($viewModel->getFillInUrl());
+?>
+
+<?php if (!$isLoggedIn && $shouldRender): ?>
+    <div x-data="postnlComponent" x-init="initialize" @private-content-loaded.window="receiveSectionData($event.detail.data)">
+        <template x-if="isVisible">
+            <div class="postnl-flex-wrapper" id="postnl-component">
+                <div class="button--postnl-container" x-show="isVisible">
+                    <button id="postnl-login-button" class="w-full min-h-[35px] max-h-[60px] bg-postnl-orange-primary text-white flex items-center justify-center gap-3 px-2 py-3 rounded-lg font-semibold text-lg cursor-pointer hover:shadow-lg hover:bg-postnl-orange-darker focus:bg-postnl-orange-darker" aria-label="<?= $escaper->escapeHtmlAttr(__('Complete with PostNL')) ?>" type="button" x-on:click="handleClick" :disabled="isDisabled">
+                        <span id="postnl-login-button__text" class="w-full flex justify-center items-center gap-2 font-semibold opacity-1 transition-colors duration-200">
+                            <span id="postnl-login-button__first-text" class="align-middle">
+                                <img loading="lazy" id="postnl-logo" src="<?= $block->getViewFileUrl('PostNL_FillIn::images/postnl-logo.png') ?>" alt="PostNL" width="40" height="40"/>
+                            </span>
+                            <span id="postnl-login-button__second-text" class="pl-1"><?= $escaper->escapeHtml(__('Complete with PostNL')) ?></span>
+                        </span>
+                    </button>
+
+                    <div class="tooltip-wrapper mt-3">
+                        <p class="heading flex justify-center gap-1 text-sm font-normal m-0">
+                            <?= $escaper->escapeHtml(__('Fill in the details with PostNL')) ?>
+                            <span class="tooltip-icon relative cursor-pointer">
+                                <img loading="lazy" src="<?= $block->getViewFileUrl('PostNL_FillIn::images/tooltip.png') ?>" alt="<?= $escaper->escapeHtmlAttr(__('Fill in the details with PostNL')) ?>" width="16" height="16"/>
+                                <span class="tooltip-text hidden min-w-[320px] absolute bottom-[-10px] right-0 bg-postnl-gray-darker text-white text-center transition-opacity duration-300 p-2 rounded-lg text-sm shadow-lg z-[-1]">
+                                    <?= $escaper->escapeHtml(__("We'll copy your name and address from your PostNL account. So you don't have to enter them again!")) ?>
+                                </span>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+<?php endif; ?>

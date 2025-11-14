@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="cart-drawer.items.before">
+            <block name="before_buttons"
+                   template="PostNL_HyvaCheckout::cart/button.phtml"
+                   ifconfig="tig_postnl/fillin/settings/minicart/enabled">
+                <arguments>
+                    <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
+                    <argument name="hyva_js_block_dependencies" xsi:type="array">
+                        <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
+                    </argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+        <referenceContainer name="cart-drawer.bottom">
+            <block name="after_buttons"
+                   template="PostNL_HyvaCheckout::cart/button.phtml"
+                   ifconfig="tig_postnl/fillin/settings/minicart/enabled" after="-">
+                <arguments>
+                    <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
+                    <argument name="hyva_js_block_dependencies" xsi:type="array">
+                        <item name="postnl.button.js.loader" xsi:type="boolean">true</item>
+                    </argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+        <block class="Magento\Framework\View\Element\Template"
+               template="PostNL_HyvaCheckout::js/button-loader.phtml"
+               name="postnl.button.js.loader" before="-" >
+            <arguments>
+                <argument name="view_model" xsi:type="object">TIG\PostNL\ViewModel\FillIn</argument>
+            </arguments>
+        </block>
+    </body>
+</page>
