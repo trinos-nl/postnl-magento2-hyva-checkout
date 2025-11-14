@@ -33,9 +33,6 @@ class ShippingMethod extends Component implements EvaluationInterface
         //'postnl_unselect_pickup_point' => 'unselectPickupPoint',
     ];
 
-    protected $loader = [
-        'updatedType' => 'Saving selected option...',
-    ];
 
     private CheckoutSession $checkoutSession;
     private QuoteOrderRepository $postnlOrderRepository;

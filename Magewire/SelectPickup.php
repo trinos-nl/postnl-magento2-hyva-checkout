@@ -278,12 +278,7 @@ class SelectPickup extends Component implements EvaluationInterface
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
         if ($this->isOpen() && !$this->locationId) {
-            $errorMessageEvent = $resultFactory->createErrorMessageEvent();
-            $errorMessageEvent->withCustomEvent('shipping:method:error');
-
-            return $errorMessageEvent->withMessage(
-                'Please select a delivery timeframe.'
-            );
+            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
         }
 
         return $resultFactory->createSuccess();

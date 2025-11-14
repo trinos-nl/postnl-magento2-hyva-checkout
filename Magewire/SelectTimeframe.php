@@ -92,11 +92,6 @@ class SelectTimeframe extends Component implements EvaluationInterface
         }
 
         $this->deliverySelected = true;
-
-        if (!$this->deliveryTimeframe) {
-            $quote = $this->checkoutSession->getQuote();
-            $this->checkOptionSelected($quote);
-        }
     }
 
     public function resetStoredData(): void
@@ -303,25 +298,18 @@ class SelectTimeframe extends Component implements EvaluationInterface
                     }
                 }
                 $this->deliveryTimeframe = implode('__', $key);
-            } else if (!$this->deliveryTimeframe) {
-                $this->selectFirstDelivery();
             }
-
             if ($postnlOrder->getIsStatedAddressOnly() > 0) {
                 $this->statedOnly = 1;
             }
         } else {
-            $this->selectFirstDelivery();
-        }
-    }
-
-    private function selectFirstDelivery()
-    {
-        $timeframes = $this->getTimeframes();
-        // In case this is a delivery day, not a fall-back option of some sort
-        if (isset($timeframes[0]) && $timeframes[0]->getDate()) {
-            $this->deliveryTimeframe = $timeframes[0]->getOptions()[0]->getValue();
-            $this->saveDeliveryTimeframe($this->deliveryTimeframe);
+            // Select first delivery
+            $timeframes = $this->getTimeframes();
+            // In case this is a delivery day, not a fall-back option of some sort
+            if (isset($timeframes[0]) && $timeframes[0]->getDate()) {
+                $this->deliveryTimeframe = $timeframes[0]->getOptions()[0]->getValue();
+                $this->saveDeliveryTimeframe($this->deliveryTimeframe);
+            }
         }
     }
 
@@ -369,12 +357,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
         if ($this->isOpen() && !$this->deliveryTimeframe) {
-            $errorMessageEvent = $resultFactory->createErrorMessageEvent();
-            $errorMessageEvent->withCustomEvent('shipping:method:error');
-
-            return $errorMessageEvent->withMessage(
-                'Please select a delivery timeframe.'
-            );
+            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
         }
 
         return $resultFactory->createSuccess();
