@@ -118,14 +118,14 @@ class SelectTimeframe extends Component implements EvaluationInterface
      */
     public function getTimeframes(): array
     {
-            $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
+        $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
 
-            $data = [
-                'country' => $shippingAddress->getCountryId(),
-                'street' => $shippingAddress->getStreet(),
-                'postcode' => $shippingAddress->getPostcode(),
-                'city' => $shippingAddress->getCity(),
-            ];
+        $data = [
+            'country' => $shippingAddress->getCountryId(),
+            'street' => $shippingAddress->getStreet(),
+            'postcode' => $shippingAddress->getPostcode(),
+            'city' => $shippingAddress->getCity(),
+        ];
 
         return  $this->convertResponse($this->timeframeResolver->processTimeframes($data));
     }
