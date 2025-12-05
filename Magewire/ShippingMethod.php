@@ -14,6 +14,7 @@ use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Shipping\BoxablePackets;
 use TIG\PostNL\Service\Shipping\InternationalPacket;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
+use TIG\PostNL\Service\Timeframe\Resolver;
 
 class ShippingMethod extends Component implements EvaluationInterface
 {
@@ -46,6 +47,7 @@ class ShippingMethod extends Component implements EvaluationInterface
     private PickupValidator $pickupValidator;
 
     private LetterboxPackage $letterboxPackage;
+    private Resolver $timeframeResolver;
 
     public function __construct(
         CheckoutSession $checkoutSession,
@@ -55,7 +57,8 @@ class ShippingMethod extends Component implements EvaluationInterface
         BoxablePackets $boxablePackets,
         InternationalPacket $internationalPacket,
         PickupValidator $pickupValidator,
-        LetterboxPackage $letterboxPackage
+        LetterboxPackage $letterboxPackage,
+        Resolver $timeframeResolver
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->postnlOrderRepository = $postnlOrderRepository;
@@ -65,6 +68,7 @@ class ShippingMethod extends Component implements EvaluationInterface
         $this->internationalPacket = $internationalPacket;
         $this->pickupValidator = $pickupValidator;
         $this->letterboxPackage = $letterboxPackage;
+        $this->timeframeResolver = $timeframeResolver;
     }
 
     public function canDisplayPickup(): bool
@@ -122,11 +126,28 @@ class ShippingMethod extends Component implements EvaluationInterface
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
         $quote = $this->checkoutSession->getQuote();
+        $shippingAddress = $quote->getShippingAddress();
 
         // Check if postnl order already exists
         $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
-        if (!$postnlOrder->getEntityId() || !$postnlOrder->getType()) {
+
+        if ($this->isPickup() && (!$postnlOrder->getEntityId() || !$postnlOrder->getType())) {
             return $resultFactory->createErrorMessage((string)__('Please choose delivery options.'));
+        }
+
+        if ($this->isDelivery()) {
+            $timeframes = $this->timeframeResolver->processTimeframes([
+                'country' => $shippingAddress->getCountryId(),
+                'street' => $shippingAddress->getStreet(),
+                'postcode' => $shippingAddress->getPostcode(),
+                'city' => $shippingAddress->getCity(),
+            ]);
+
+            //in case time frames are disabled or selection is not possible
+            //$timeframes['error'] contains error message
+            if (empty($timeframes['error']) && (!$postnlOrder->getEntityId() || !$postnlOrder->getType())) {
+                return $resultFactory->createErrorMessage((string)__('Please choose delivery options.'));
+            }
         }
 
         return $resultFactory->createSuccess();

@@ -24,6 +24,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
     public bool $deliverySelected = false;
 
     public string $deliveryTimeframe = '';
+
     public $statedOnly = '';
 
     protected $listeners = [
@@ -117,16 +118,16 @@ class SelectTimeframe extends Component implements EvaluationInterface
      */
     public function getTimeframes(): array
     {
-        $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
+            $shippingAddress = $this->checkoutSession->getQuote()->getShippingAddress();
 
-        $data = [
-            'country' => $shippingAddress->getCountryId(),
-            'street' => $shippingAddress->getStreet(),
-            'postcode' => $shippingAddress->getPostcode(),
-            'city' => $shippingAddress->getCity(),
-        ];
+            $data = [
+                'country' => $shippingAddress->getCountryId(),
+                'street' => $shippingAddress->getStreet(),
+                'postcode' => $shippingAddress->getPostcode(),
+                'city' => $shippingAddress->getCity(),
+            ];
 
-        return $this->convertResponse($this->timeframeResolver->processTimeframes($data));
+        return  $this->convertResponse($this->timeframeResolver->processTimeframes($data));
     }
 
     private function checkShippingSelected(\Magento\Quote\Api\Data\CartInterface $quote): bool
@@ -368,7 +369,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
 
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
-        if ($this->isOpen() && !$this->deliveryTimeframe) {
+        if ($this->isOpen() && $this->getTimeframes() && !$this->deliveryTimeframe) {
             $errorMessageEvent = $resultFactory->createErrorMessageEvent();
             $errorMessageEvent->withCustomEvent('shipping:method:error');
 
