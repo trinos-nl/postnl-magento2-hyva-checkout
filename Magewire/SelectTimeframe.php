@@ -31,7 +31,6 @@ class SelectTimeframe extends Component implements EvaluationInterface
         'postnl_select_delivery_type' => 'init',
         'shipping_address_saved' => 'refresh',
         'postnl_delivery_selected' => 'refresh',
-        'postnl_pickup_selected' => 'resetStoredData'
     ];
 
     protected $loader = [
@@ -86,24 +85,19 @@ class SelectTimeframe extends Component implements EvaluationInterface
         }
 
         $value = $data['value'] ?? null;
-        if ($value !== CheckoutFieldsApi::DELIVERY_TYPE_DELIVERY) {
-            $this->deliverySelected = false;
-            //$this->reset(['pickupPointId', 'pickupPoints']);
-            return;
-        }
+        $this->deliverySelected = $value === CheckoutFieldsApi::DELIVERY_TYPE_DELIVERY;
 
-        $this->deliverySelected = true;
 
-        if (!$this->deliveryTimeframe) {
+        if ($this->deliverySelected) {
             $quote = $this->checkoutSession->getQuote();
+            $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
+            if ($postnlOrder->getEntityId() && $postnlOrder->getIsPakjegemak()) {
+                $this->updatedDeliveryTimeframe($this->deliveryTimeframe);
+            }
+
             $this->checkOptionSelected($quote);
         }
-    }
-
-    public function resetStoredData(): void
-    {
-        $this->deliverySelected = false;
-        $this->deliveryTimeframe = '';
     }
 
     public function isOpen(): bool
@@ -127,7 +121,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
             'city' => $shippingAddress->getCity(),
         ];
 
-        return  $this->convertResponse($this->timeframeResolver->processTimeframes($data));
+        return $this->convertResponse($this->timeframeResolver->processTimeframes($data));
     }
 
     private function checkShippingSelected(\Magento\Quote\Api\Data\CartInterface $quote): bool
@@ -158,8 +152,10 @@ class SelectTimeframe extends Component implements EvaluationInterface
                     if ($this->letterboxPackage->isLetterboxPackage($products)) {
                         $this->deliverySelected = true;
                     }
-                    // Pickup is not default - update
-                } elseif (!$this->pickupValidator->isDefaultPickupActive($countryId)) {
+                }
+
+                // Pickup is not default - update
+                if ($this->deliverySelected !== true && !$this->pickupValidator->isDefaultPickupActive($countryId)) {
                     $this->deliverySelected = true;
                 }
             }
@@ -319,11 +315,19 @@ class SelectTimeframe extends Component implements EvaluationInterface
     private function selectFirstDelivery()
     {
         $timeframes = $this->getTimeframes();
-        // In case this is a delivery day, not a fall-back option of some sort
-        if (isset($timeframes[0]) && $timeframes[0]->getDate()) {
-            $this->deliveryTimeframe = $timeframes[0]->getOptions()[0]->getValue();
-            $this->saveDeliveryTimeframe($this->deliveryTimeframe);
+        $timeframe = $timeframes[0] ?? null;
+
+        if (!$timeframe) {
+            return;
         }
+
+        // In case this is a delivery day, not a fall-back option of some sort
+        //if ($timeframe->getDate()) {
+            $this->deliveryTimeframe = $timeframe->getOptions()[0]?->getValue();
+       // }
+
+        $this->updatedDeliveryTimeframe($this->deliveryTimeframe);
+
     }
 
     public function canUseStatedAddressOnly(): bool

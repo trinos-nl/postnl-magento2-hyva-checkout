@@ -1,9 +1,6 @@
 <?php
 namespace PostNL\HyvaCheckout\Magewire;
 
-use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
-use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
-use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Magewirephp\Magewire\Component;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use PostNL\HyvaCheckout\Model\QuoteOrderRepository;
@@ -16,7 +13,7 @@ use TIG\PostNL\Service\Shipping\InternationalPacket;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
 use TIG\PostNL\Service\Timeframe\Resolver;
 
-class ShippingMethod extends Component implements EvaluationInterface
+class ShippingMethod extends Component
 {
     public $type = null;
 
@@ -29,6 +26,7 @@ class ShippingMethod extends Component implements EvaluationInterface
         'shipping_address_saved' => 'refresh',
         'shipping_country_updated' => 'setTypeToDelivery',
         'postnl_delivery_selected' => 'refresh',
+        'postnl_pickup_selected' => 'refresh',
         'shipping_method_selected' => 'refresh',
         //'postnl_locations_request_failed' => 'setTypeToDelivery',
         //'postnl_unselect_pickup_point' => 'unselectPickupPoint',
@@ -121,36 +119,6 @@ class ShippingMethod extends Component implements EvaluationInterface
             $this->emit('postnl_select_delivery_type', ['value' => $value]);
         }
         return $value;
-    }
-
-    public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
-    {
-        $quote = $this->checkoutSession->getQuote();
-        $shippingAddress = $quote->getShippingAddress();
-
-        // Check if postnl order already exists
-        $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
-
-        if ($this->isPickup() && (!$postnlOrder->getEntityId() || !$postnlOrder->getType())) {
-            return $resultFactory->createErrorMessage((string)__('Please choose delivery options.'));
-        }
-
-        if ($this->isDelivery()) {
-            $timeframes = $this->timeframeResolver->processTimeframes([
-                'country' => $shippingAddress->getCountryId(),
-                'street' => $shippingAddress->getStreet(),
-                'postcode' => $shippingAddress->getPostcode(),
-                'city' => $shippingAddress->getCity(),
-            ]);
-
-            //in case time frames are disabled or selection is not possible
-            //$timeframes['error'] contains error message
-            if (empty($timeframes['error']) && (!$postnlOrder->getEntityId() || !$postnlOrder->getType())) {
-                return $resultFactory->createErrorMessage((string)__('Please choose delivery options.'));
-            }
-        }
-
-        return $resultFactory->createSuccess();
     }
 
     public function isDelivery(): bool
