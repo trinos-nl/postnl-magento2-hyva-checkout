@@ -94,6 +94,7 @@ class SelectPickup extends Component implements EvaluationInterface
                 'code'    => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::SHIPPING_CODE,
             ]);
             $this->emit('postnl_pickup_selected');
+            $this->editMode = 0;
         }
         return $value;
     }
@@ -115,18 +116,16 @@ class SelectPickup extends Component implements EvaluationInterface
 
         $request = [
             'type' => CheckoutFieldsApi::DELIVERY_TYPE_PICKUP,
-            'option' => 'PG',
+            'option' => 'PG', // Always
+            'from' => '15:00:00', // Also always
             'country' => $shipping->getCountryId(),
             'quote_id' => $quote->getId(),
-            'address' => [
-                'Countrycode' => $location->getCountry(),
-                'Zipcode' => $location->getPostcode(),
-                'Street' => $location->getStreet(),
-                'HouseNr' => $location->getHouseNumber(),
-                'HouseNrExt' => $location->getHouseNumberExt(),
-                'City' => $location->getCity(),
-            ],
+            'address' => $location->getAddressArray(),
             'customerData' => [
+                'country' => $shipping->getCountryId(),
+                'street' => $shipping->getStreet(),
+                'postcode' => $shipping->getPostcode(),
+                'housenumber' => $street[1] ?? '',
                 'firstname' => $shipping->getFirstname(),
                 'lastname' => $shipping->getLastname(),
                 'telephone' =>$shipping->getTelephone(),

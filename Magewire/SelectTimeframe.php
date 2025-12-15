@@ -321,13 +321,8 @@ class SelectTimeframe extends Component implements EvaluationInterface
             return;
         }
 
-        // In case this is a delivery day, not a fall-back option of some sort
-        //if ($timeframe->getDate()) {
-            $this->deliveryTimeframe = $timeframe->getOptions()[0]?->getValue();
-       // }
-
+        $this->deliveryTimeframe = $timeframe->getOptions()[0]?->getValue();
         $this->updatedDeliveryTimeframe($this->deliveryTimeframe);
-
     }
 
     public function canUseStatedAddressOnly(): bool
