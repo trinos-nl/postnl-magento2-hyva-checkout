@@ -254,8 +254,16 @@ class SelectTimeframe extends Component implements EvaluationInterface
             return [$day];
         }
         $result = [];
+
+
         foreach ($timeframes as $dayData) {
+            //move evening delivery to the end
+            $dayData = array_filter($dayData, function($item) {
+                return $item['option'] != "Evening";
+            }) + $dayData;
+
             $options = [];
+            
             foreach ($dayData as $dayInfo) {
                 $key = [
                     $dayInfo['option'],
@@ -272,6 +280,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
                 );
                 $options[] = $timeframe;
             }
+
             $day = new Delivery\Day($options, $dayInfo['date'] ?? '', $dayInfo['day'] ?? '');
             $result[] = $day;
         }
@@ -280,9 +289,23 @@ class SelectTimeframe extends Component implements EvaluationInterface
 
     private function checkOptionSelected(\Magento\Quote\Api\Data\CartInterface $quote): void
     {
+        $timeframes = $this->getTimeframes();
         $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
         if ($postnlOrder->getEntityId() && $postnlOrder->getType()) {
+            if ($postnlOrder->getIsStatedAddressOnly() > 0) {
+                $this->statedOnly = 1;
+            }
+
             if (!$this->deliveryTimeframe && !$postnlOrder->getIsPakjegemak()) {
+                // Seems like if a non-day delivery option or a fallback one - get data from timeframes
+                if (isset($timeframes[0]) && !$timeframes[0]->getDate()) {
+                    $key = [$timeframes[0]->getOptions()[0]->getValue()];
+                    $this->deliveryTimeframe = implode('__', $key);
+
+                    return;
+                }
+
                 $key[] = $postnlOrder->getType();
                 if ($postnlOrder->getExpectedDeliveryTimeStart()) {
                     // Change format from database Y-m-d to d-m-Y that is response from PostNL
@@ -292,22 +315,25 @@ class SelectTimeframe extends Component implements EvaluationInterface
                         $postnlOrder->getExpectedDeliveryTimeStart(),
                         $postnlOrder->getExpectedDeliveryTimeEnd()
                     );
-                } else {
-                    // Seems like if a non-day delivery option or a fallback one - get data from timeframes
-                    $timeframes = $this->getTimeframes();
-                    if (isset($timeframes[0]) && !$timeframes[0]->getDate()) {
-                        $key = [$timeframes[0]->getOptions()[0]->getValue()];
+
+                    $selectedTimeframe = implode('__', $key);
+
+                    foreach ($timeframes as $timeframe) {
+                        if ($timeframe->getDate() !== $date->format('d-m-Y')) {
+                            continue;
+                        }
+
+                        foreach ($timeframe->getOptions() as $option) {
+                            if ($option->getValue() === $selectedTimeframe) {
+                                $this->deliveryTimeframe = $selectedTimeframe;
+                            }
+                        }
                     }
                 }
-                $this->deliveryTimeframe = implode('__', $key);
-            } else if (!$this->deliveryTimeframe) {
-                $this->selectFirstDelivery();
             }
+        }
 
-            if ($postnlOrder->getIsStatedAddressOnly() > 0) {
-                $this->statedOnly = 1;
-            }
-        } else {
+        if (!$this->deliveryTimeframe) {
             $this->selectFirstDelivery();
         }
     }
@@ -373,7 +399,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
             $errorMessageEvent->withCustomEvent('shipping:method:error');
 
             return $errorMessageEvent->withMessage(
-                'Please select a delivery timeframe.'
+                'Please choose delivery options.'
             );
         }
 

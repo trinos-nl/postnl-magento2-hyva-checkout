@@ -282,7 +282,7 @@ class SelectPickup extends Component implements EvaluationInterface
             $errorMessageEvent->withCustomEvent('shipping:method:error');
 
             return $errorMessageEvent->withMessage(
-                'Please select a delivery timeframe.'
+                'Please choose delivery options.'
             );
         }
 
