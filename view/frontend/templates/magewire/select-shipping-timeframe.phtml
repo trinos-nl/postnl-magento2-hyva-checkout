@@ -25,7 +25,7 @@ $shippingViewModel = $viewModels->require(ShippingView::class);
                     <?php if ($dayData->getDate()): ?>
                         <strong class="shipping-timeframe flex w-full bg-postnl-gray-light justify-start text-postnl-gray-darker
                             py-3 px-4 border-t-2 border-b-2 border-postnl-gray-lighter">
-                            <span class="deliverydays-day uppercase"><?= $escaper->escapeHtml($dayData->getWeekDay()) ?>, </span>
+                            <span class="deliverydays-day uppercase"><?= $escaper->escapeHtml(__(date('l', strtotime($dayData->getDate())))) ?>, </span>
                             <span class="deliverydays-date"> <?= $escaper->escapeHtml($dayData->getDate()) ?></span>
                         </strong>
                     <?php endif; ?>

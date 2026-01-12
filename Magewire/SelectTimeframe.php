@@ -263,7 +263,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
             }) + $dayData;
 
             $options = [];
-            
+
             foreach ($dayData as $dayInfo) {
                 $key = [
                     $dayInfo['option'],
