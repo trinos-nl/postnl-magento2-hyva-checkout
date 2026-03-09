@@ -54,7 +54,7 @@ $pickupPrice = $shippingViewModel->getPickupPrice();
         </div>
         <?= /* @noEscape */ $block->getChildHtml('select-delivery-timeframe') ?>
         <?php if ($magewire->canDisplayPickup()): ?>
-        <?= /* @noEscape */ $block->getChildHtml('select-pickup-location') ?>
+            <?= /* @noEscape */ $block->getChildHtml('select-pickup-location') ?>
         <?php endif; ?>
     </div>
 </div>

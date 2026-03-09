@@ -24,13 +24,13 @@ class SelectTimeframe extends Component implements EvaluationInterface
     public bool $deliverySelected = false;
 
     public string $deliveryTimeframe = '';
+
     public $statedOnly = '';
 
     protected $listeners = [
         'postnl_select_delivery_type' => 'init',
         'shipping_address_saved' => 'refresh',
         'postnl_delivery_selected' => 'refresh',
-        'postnl_pickup_selected' => 'resetStoredData'
     ];
 
     protected $loader = [
@@ -85,19 +85,19 @@ class SelectTimeframe extends Component implements EvaluationInterface
         }
 
         $value = $data['value'] ?? null;
-        if ($value !== CheckoutFieldsApi::DELIVERY_TYPE_DELIVERY) {
-            $this->deliverySelected = false;
-            //$this->reset(['pickupPointId', 'pickupPoints']);
-            return;
+        $this->deliverySelected = $value === CheckoutFieldsApi::DELIVERY_TYPE_DELIVERY;
+
+
+        if ($this->deliverySelected) {
+            $quote = $this->checkoutSession->getQuote();
+            $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
+            if ($postnlOrder->getEntityId() && $postnlOrder->getIsPakjegemak()) {
+                $this->updatedDeliveryTimeframe($this->deliveryTimeframe);
+            }
+
+            $this->checkOptionSelected($quote);
         }
-
-        $this->deliverySelected = true;
-    }
-
-    public function resetStoredData(): void
-    {
-        $this->deliverySelected = false;
-        $this->deliveryTimeframe = '';
     }
 
     public function isOpen(): bool
@@ -152,8 +152,10 @@ class SelectTimeframe extends Component implements EvaluationInterface
                     if ($this->letterboxPackage->isLetterboxPackage($products)) {
                         $this->deliverySelected = true;
                     }
-                    // Pickup is not default - update
-                } elseif (!$this->pickupValidator->isDefaultPickupActive($countryId)) {
+                }
+
+                // Pickup is not default - update
+                if ($this->deliverySelected !== true && !$this->pickupValidator->isDefaultPickupActive($countryId)) {
                     $this->deliverySelected = true;
                 }
             }
@@ -252,8 +254,16 @@ class SelectTimeframe extends Component implements EvaluationInterface
             return [$day];
         }
         $result = [];
+
+
         foreach ($timeframes as $dayData) {
+            //move evening delivery to the end
+            $dayData = array_filter($dayData, function($item) {
+                return $item['option'] != "Evening";
+            }) + $dayData;
+
             $options = [];
+
             foreach ($dayData as $dayInfo) {
                 $key = [
                     $dayInfo['option'],
@@ -270,6 +280,7 @@ class SelectTimeframe extends Component implements EvaluationInterface
                 );
                 $options[] = $timeframe;
             }
+
             $day = new Delivery\Day($options, $dayInfo['date'] ?? '', $dayInfo['day'] ?? '');
             $result[] = $day;
         }
@@ -278,9 +289,23 @@ class SelectTimeframe extends Component implements EvaluationInterface
 
     private function checkOptionSelected(\Magento\Quote\Api\Data\CartInterface $quote): void
     {
+        $timeframes = $this->getTimeframes();
         $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
         if ($postnlOrder->getEntityId() && $postnlOrder->getType()) {
+            if ($postnlOrder->getIsStatedAddressOnly() > 0) {
+                $this->statedOnly = 1;
+            }
+
             if (!$this->deliveryTimeframe && !$postnlOrder->getIsPakjegemak()) {
+                // Seems like if a non-day delivery option or a fallback one - get data from timeframes
+                if (isset($timeframes[0]) && !$timeframes[0]->getDate()) {
+                    $key = [$timeframes[0]->getOptions()[0]->getValue()];
+                    $this->deliveryTimeframe = implode('__', $key);
+
+                    return;
+                }
+
                 $key[] = $postnlOrder->getType();
                 if ($postnlOrder->getExpectedDeliveryTimeStart()) {
                     // Change format from database Y-m-d to d-m-Y that is response from PostNL
@@ -290,27 +315,40 @@ class SelectTimeframe extends Component implements EvaluationInterface
                         $postnlOrder->getExpectedDeliveryTimeStart(),
                         $postnlOrder->getExpectedDeliveryTimeEnd()
                     );
-                } else {
-                    // Seems like if a non-day delivery option or a fallback one - get data from timeframes
-                    $timeframes = $this->getTimeframes();
-                    if (isset($timeframes[0]) && !$timeframes[0]->getDate()) {
-                        $key = [$timeframes[0]->getOptions()[0]->getValue()];
+
+                    $selectedTimeframe = implode('__', $key);
+
+                    foreach ($timeframes as $timeframe) {
+                        if ($timeframe->getDate() !== $date->format('d-m-Y')) {
+                            continue;
+                        }
+
+                        foreach ($timeframe->getOptions() as $option) {
+                            if ($option->getValue() === $selectedTimeframe) {
+                                $this->deliveryTimeframe = $selectedTimeframe;
+                            }
+                        }
                     }
                 }
-                $this->deliveryTimeframe = implode('__', $key);
-            }
-            if ($postnlOrder->getIsStatedAddressOnly() > 0) {
-                $this->statedOnly = 1;
-            }
-        } else {
-            // Select first delivery
-            $timeframes = $this->getTimeframes();
-            // In case this is a delivery day, not a fall-back option of some sort
-            if (isset($timeframes[0]) && $timeframes[0]->getDate()) {
-                $this->deliveryTimeframe = $timeframes[0]->getOptions()[0]->getValue();
-                $this->saveDeliveryTimeframe($this->deliveryTimeframe);
             }
         }
+
+        if (!$this->deliveryTimeframe) {
+            $this->selectFirstDelivery();
+        }
+    }
+
+    private function selectFirstDelivery()
+    {
+        $timeframes = $this->getTimeframes();
+        $timeframe = $timeframes[0] ?? null;
+
+        if (!$timeframe) {
+            return;
+        }
+
+        $this->deliveryTimeframe = $timeframe->getOptions()[0]?->getValue();
+        $this->updatedDeliveryTimeframe($this->deliveryTimeframe);
     }
 
     public function canUseStatedAddressOnly(): bool
@@ -356,8 +394,13 @@ class SelectTimeframe extends Component implements EvaluationInterface
 
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
-        if ($this->isOpen() && !$this->deliveryTimeframe) {
-            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
+        if ($this->isOpen() && $this->getTimeframes() && !$this->deliveryTimeframe) {
+            $errorMessageEvent = $resultFactory->createErrorMessageEvent();
+            $errorMessageEvent->withCustomEvent('shipping:method:error');
+
+            return $errorMessageEvent->withMessage(
+                'Please choose delivery options.'
+            );
         }
 
         return $resultFactory->createSuccess();

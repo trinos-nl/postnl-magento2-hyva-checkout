@@ -30,11 +30,10 @@ class SelectPickup extends Component implements EvaluationInterface
         'postnl_select_delivery_type' => 'init',
         'shipping_address_saved' => 'refresh',
         'postnl_pickup_selected' => 'refresh',
-        'postnl_delivery_selected' => 'resetStoredData'
     ];
 
     protected $loader = [
-        'updatedPickupSelected' => 'Saving selected option...',
+        'updatedLocationId' => 'Saving selected option...',
     ];
 
     private CheckoutSession $checkoutSession;
@@ -75,12 +74,79 @@ class SelectPickup extends Component implements EvaluationInterface
 
         $value = $data['value'] ?? null;
         $this->pickupSelected = $value === CheckoutFieldsApi::DELIVERY_TYPE_PICKUP;
+
+        if ($this->pickupSelected) {
+            $quote = $this->checkoutSession->getQuote();
+            $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
+            if ($postnlOrder->getEntityId() && !$postnlOrder->getIsPakjegemak()) {
+                $this->updatedLocationId($this->locationId);
+            }
+        }
     }
 
-    public function resetStoredData(): void
+    public function updatedLocationId($value)
     {
-        $this->pickupSelected = false;
-        $this->locationId = '';
+        if ($this->savePickupSelected($value)) {
+            $this->emit('shipping_method_selected', [
+                'method'  => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::METHOD_CODE,
+                'carrier' => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::CARRIER_CODE,
+                'code'    => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::SHIPPING_CODE,
+            ]);
+            $this->emit('postnl_pickup_selected');
+            $this->editMode = 0;
+        }
+        return $value;
+    }
+
+    public function savePickupSelected($value)
+    {
+        $quote = $this->checkoutSession->getQuote();
+        if (!$value || !$this->checkShippingSelected($quote)) {
+            return false;
+        }
+
+        // Simulate request data from Magento checkout
+        $shipping = $quote->getShippingAddress();
+        $location = $this->getLocationById($value);
+
+        if (!$location) {
+            return false;
+        }
+
+        $request = [
+            'type' => CheckoutFieldsApi::DELIVERY_TYPE_PICKUP,
+            'option' => 'PG', // Always
+            'from' => '15:00:00', // Also always
+            'country' => $shipping->getCountryId(),
+            'quote_id' => $quote->getId(),
+            'address' => $location->getAddressArray(),
+            'customerData' => [
+                'country' => $shipping->getCountryId(),
+                'street' => $shipping->getStreet(),
+                'postcode' => $shipping->getPostcode(),
+                'housenumber' => $street[1] ?? '',
+                'firstname' => $shipping->getFirstname(),
+                'lastname' => $shipping->getLastname(),
+                'telephone' =>$shipping->getTelephone(),
+            ],
+            'LocationCode' => $location->getValue(),
+            'RetailNetworkID' => $location->getNetworkId(),
+            'name' => $location->getName(),
+        ];
+
+        $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
+
+        try {
+            $shipping->setCollectShippingRates(true);
+            $this->orderSave->saveDeliveryOption($postnlOrder, $request);
+        } catch (LocalizedException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw new LocalizedException(__('Failed to save postnl order information.'));
+        }
+
+        return true;
     }
 
     public function isOpen(): bool
@@ -171,72 +237,6 @@ class SelectPickup extends Component implements EvaluationInterface
         return true;
     }
 
-    public function updatedEditMode($value): string
-    {
-        if ((int)$value > 0) {
-            //$this->emit('postnl_pickup_selected');
-        }
-        return $value;
-    }
-
-    public function updatedLocationId($value): string
-    {
-        $value = (int)$value;
-        if (!$value) {
-            return '';
-        }
-        $pickupLocation = $this->getLocationById($value);
-        if (!$pickupLocation) {
-            return '';
-        }
-        $quote = $this->checkoutSession->getQuote();
-
-        // Simulate request data from Magento checkout
-        $shipping = $quote->getShippingAddress();
-        $street = $shipping->getStreet();
-        $request = [
-            'type' => CheckoutFieldsApi::DELIVERY_TYPE_PICKUP,
-            'option' => 'PG', // Always
-            'from' => '15:00:00', // Also always
-            'name' => $pickupLocation->getName(),
-            'LocationCode' => $value,
-            'RetailNetworkID' => $pickupLocation->getNetworkId(),
-            'country' => $shipping->getCountryId(),
-            'quote_id' => $quote->getId(),
-            'address' => $pickupLocation->getAddressArray(),
-            'customerData' => [
-                'country' => $shipping->getCountryId(),
-                'street' => $shipping->getStreet(),
-                'postcode' => $shipping->getPostcode(),
-                'housenumber' => $street[1] ?? '',
-                'firstname' => $shipping->getFirstname(),
-                'lastname' => $shipping->getLastname(),
-                'telephone' => $shipping->getTelephone()
-            ]
-        ];
-
-        $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
-        try {
-            $shipping->setCollectShippingRates(true);
-            $this->orderSave->saveDeliveryOption($postnlOrder, $request);
-        } catch (LocalizedException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw new LocalizedException(__('Failed to save postnl order information.'));
-        }
-        //$this->location = $pickupLocation;
-        $this->editMode = 0;
-        // Trigger updates on related blocks
-        $this->emit('shipping_method_selected', [
-            'method'  => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::METHOD_CODE,
-            'carrier' => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::CARRIER_CODE,
-            'code'    => \PostNL\HyvaCheckout\Api\CheckoutFieldsApi::SHIPPING_CODE,
-        ]);
-        $this->emit('postnl_pickup_selected');
-
-        return (string)$value;
-    }
-
     private function getLocationById(int $locationId): ?Location
     {
         $locations = $this->getLocations();
@@ -278,7 +278,12 @@ class SelectPickup extends Component implements EvaluationInterface
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
     {
         if ($this->isOpen() && !$this->locationId) {
-            return $resultFactory->createErrorMessage((string)__('Please select a delivery timeframe.'));
+            $errorMessageEvent = $resultFactory->createErrorMessageEvent();
+            $errorMessageEvent->withCustomEvent('shipping:method:error');
+
+            return $errorMessageEvent->withMessage(
+                'Please choose delivery options.'
+            );
         }
 
         return $resultFactory->createSuccess();

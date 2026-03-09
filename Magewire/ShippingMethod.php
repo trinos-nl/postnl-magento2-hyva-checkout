@@ -1,9 +1,6 @@
 <?php
 namespace PostNL\HyvaCheckout\Magewire;
 
-use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
-use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
-use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Magewirephp\Magewire\Component;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use PostNL\HyvaCheckout\Model\QuoteOrderRepository;
@@ -14,8 +11,9 @@ use TIG\PostNL\Service\Shipment\PickupValidator;
 use TIG\PostNL\Service\Shipping\BoxablePackets;
 use TIG\PostNL\Service\Shipping\InternationalPacket;
 use TIG\PostNL\Service\Shipping\LetterboxPackage;
+use TIG\PostNL\Service\Timeframe\Resolver;
 
-class ShippingMethod extends Component implements EvaluationInterface
+class ShippingMethod extends Component
 {
     public $type = null;
 
@@ -28,6 +26,7 @@ class ShippingMethod extends Component implements EvaluationInterface
         'shipping_address_saved' => 'refresh',
         'shipping_country_updated' => 'setTypeToDelivery',
         'postnl_delivery_selected' => 'refresh',
+        'postnl_pickup_selected' => 'refresh',
         'shipping_method_selected' => 'refresh',
         //'postnl_locations_request_failed' => 'setTypeToDelivery',
         //'postnl_unselect_pickup_point' => 'unselectPickupPoint',
@@ -43,6 +42,7 @@ class ShippingMethod extends Component implements EvaluationInterface
     private PickupValidator $pickupValidator;
 
     private LetterboxPackage $letterboxPackage;
+    private Resolver $timeframeResolver;
 
     public function __construct(
         CheckoutSession $checkoutSession,
@@ -52,7 +52,8 @@ class ShippingMethod extends Component implements EvaluationInterface
         BoxablePackets $boxablePackets,
         InternationalPacket $internationalPacket,
         PickupValidator $pickupValidator,
-        LetterboxPackage $letterboxPackage
+        LetterboxPackage $letterboxPackage,
+        Resolver $timeframeResolver
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->postnlOrderRepository = $postnlOrderRepository;
@@ -62,6 +63,7 @@ class ShippingMethod extends Component implements EvaluationInterface
         $this->internationalPacket = $internationalPacket;
         $this->pickupValidator = $pickupValidator;
         $this->letterboxPackage = $letterboxPackage;
+        $this->timeframeResolver = $timeframeResolver;
     }
 
     public function canDisplayPickup(): bool
@@ -114,19 +116,6 @@ class ShippingMethod extends Component implements EvaluationInterface
             $this->emit('postnl_select_delivery_type', ['value' => $value]);
         }
         return $value;
-    }
-
-    public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResultInterface
-    {
-        $quote = $this->checkoutSession->getQuote();
-
-        // Check if postnl order already exists
-        $postnlOrder = $this->postnlOrderRepository->getByQuoteId($quote->getId());
-        if (!$postnlOrder->getEntityId() || !$postnlOrder->getType()) {
-            return $resultFactory->createErrorMessage((string)__('Please choose delivery options.'));
-        }
-
-        return $resultFactory->createSuccess();
     }
 
     public function isDelivery(): bool
