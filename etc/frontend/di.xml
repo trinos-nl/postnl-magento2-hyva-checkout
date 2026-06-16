@@ -42,4 +42,10 @@
                 type="PostNL\HyvaCheckout\Plugin\HyvaCheckout\Model\EntityFormSaveServicePlugin"
                 sortOrder="100" />
     </type>
+
+    <type name="PostNL\HyvaCheckout\ViewModel\ShippingView">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
 </config>

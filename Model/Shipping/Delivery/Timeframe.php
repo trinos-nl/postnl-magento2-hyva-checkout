@@ -2,23 +2,17 @@
 
 namespace PostNL\HyvaCheckout\Model\Shipping\Delivery;
 
+use function __;
+use function strtolower;
+
 class Timeframe
 {
-    private string $value;
-    private string $label;
-    private ?string $rightLabel;
-    private ?string $fee;
-
     public function __construct(
-        string $value,
-        string $label,
-        string $rightLabel = null,
-        string $fee = null
+        private readonly string $value,
+        private readonly string $label,
+        private readonly ?string $rightLabel = null,
+        private readonly ?string $fee = null
     ) {
-        $this->value = $value;
-        $this->label = $label;
-        $this->rightLabel = $rightLabel;
-        $this->fee = $fee;
     }
 
     public function getValue(): string
@@ -33,17 +27,14 @@ class Timeframe
 
     public function getRightLabel(): string
     {
-        $label = strtolower((string)$this->rightLabel);
-        switch ($label) {
-            case 'daytime':
-                return __('Daytime');
-            case 'evening':
-                return __('Evening');
-            case 'noon':
-                return __('Morning');
-            default:
-                return '';
-        }
+        $label = strtolower((string) $this->rightLabel);
+
+        return match ($label) {
+            'daytime' => __('Daytime')->render(),
+            'evening' => __('Evening')->render(),
+            'noon' => __('Morning')->render(),
+            default => '',
+        };
     }
 
     public function getFee(): ?string

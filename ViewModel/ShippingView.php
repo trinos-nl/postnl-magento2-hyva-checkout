@@ -1,4 +1,5 @@
 <?php
+
 namespace PostNL\HyvaCheckout\ViewModel;
 
 use Hyva\Checkout\ViewModel\Checkout\Formatter;
@@ -8,35 +9,29 @@ use TIG\PostNL\Helper\DeliveryOptions\PickupAddress;
 use TIG\PostNL\Service\Carrier\ParcelTypeFinder;
 use TIG\PostNL\Service\Carrier\Price\Calculator;
 use TIG\PostNL\Service\Carrier\QuoteToRateRequest;
+use function array_key_exists;
+use function is_array;
 
 class ShippingView implements ArgumentInterface
 {
     private array $cache = [];
-    private CheckoutSession $checkoutSession;
-    private Calculator $calculator;
-    private QuoteToRateRequest $quoteToRateRequest;
-    private Formatter $formatter;
 
     public function __construct(
-        CheckoutSession $checkoutSession,
-        Calculator $calculator,
-        QuoteToRateRequest $quoteToRateRequest,
-        Formatter $formatter
+        private readonly CheckoutSession $checkoutSession,
+        private readonly Calculator $calculator,
+        private readonly QuoteToRateRequest $quoteToRateRequest,
+        private readonly Formatter $formatter
     ) {
-        $this->checkoutSession = $checkoutSession;
-        $this->calculator = $calculator;
-        $this->quoteToRateRequest = $quoteToRateRequest;
-        $this->formatter = $formatter;
     }
 
-    public function getPriceFromAddressRequest(string $parcel = null): array
+    public function getPriceFromAddressRequest(?string $parcel = null): array
     {
         $shipping = $this->checkoutSession->getQuote()->getShippingAddress();
         $key = $shipping->getCountryId() . '_' . $shipping->getPostcode() . $parcel;
         if (!array_key_exists($key, $this->cache)) {
             $request = $this->quoteToRateRequest->getByUpdatedAddress(
-                (string)$shipping->getCountryId(),
-                (string)$shipping->getPostcode()
+                (string) $shipping->getCountryId(),
+                (string) $shipping->getPostcode()
             );
             $value = $this->calculator->getPriceWithTax($request, $parcel);
             // Format return types
@@ -45,6 +40,7 @@ class ShippingView implements ArgumentInterface
             }
             $this->cache[$key] = $value;
         }
+
         return $this->cache[$key];
     }
 
@@ -53,20 +49,23 @@ class ShippingView implements ArgumentInterface
         if ($price === null) {
             return '';
         }
+
         return $this->formatter->currency($price);
     }
 
     public function getDeliveryPrice(): ?string
     {
         $price = $this->getPriceFromAddressRequest(ParcelTypeFinder::DEFAULT_TYPE);
+
         // With freeShipping price can be 0.0 here, so we need to make sure that array is correct
-        return array_key_exists('price', $price) ? (string)$price['price'] : null;
+        return array_key_exists('price', $price) ? (string) $price['price'] : null;
     }
 
     public function getPickupPrice(): ?string
     {
         $price = $this->getPriceFromAddressRequest(PickupAddress::PG_ADDRESS_TYPE);
-        return array_key_exists('price', $price) ? (string)$price['price'] : null;
+
+        return array_key_exists('price', $price) ? (string) $price['price'] : null;
     }
 
 }
