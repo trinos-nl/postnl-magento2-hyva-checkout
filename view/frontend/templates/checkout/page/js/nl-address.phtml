@@ -33,7 +33,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                 options = Object.assign(this.getOptions(), options);
 
                 this.$nextTick(() => {
-                    const postcodeField = this.$root.querySelector('input[name$="[postcode]"]');
+                    const postcodeField = this.$refs.postcode;
                     if (postcodeField) {
                         postcodeField.addEventListener('blur', () => {
                             const value = postcodeField.value;
@@ -77,24 +77,18 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                 const postcode = (ref === 'postcode') ? newValue.trim() : this.address.postcode.trim();
                 const houseNumber = (ref === 'postnl_housenumber') ? newValue.trim() : this.address.postnl_housenumber.trim();
 
+                if (ref === 'postcode' && !postcode) {
+                    return;
+                }
+
                 if (ref === 'postcode' && !this.postcodeRegex.test(postcode)) {
 
-                    const postcodeField = this.$root.querySelector('#shipping-postcode');
-
-                    if (postcodeField) {
-                        postcodeField.value = '';
-                        postcodeField.focus();
-                    }
-
-                    const streetField = this.$root.querySelector('input[name$="[street][]"]');
+                    const streetField = this.$root.closest('form')?.querySelector('[name="street[0]"]');
                     if (streetField) {
                         if (this.address.country_id === 'NL') {
                             streetField.value = '';
                         }
                     }
-
-                    this.address.postcode = '';
-                    wire.set('address.postcode', '');
 
                     const isDutchAddress = this.address.country_id === 'NL';
 
@@ -102,7 +96,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                         street: isDutchAddress ? '' : this.address.street,
                         houseNumber: this.address.postnl_housenumber,
                         houseNumberAddition: this.address.postnl_housenumber_addition,
-                        postcode: '',
+                        postcode: postcode,
                         city: ''
                     };
 
@@ -121,7 +115,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                     if (validationResults.every(r => r === true)) {
                         inputChangeTimeout = setTimeout(async () => {
                             const postcode = this.address.postcode.trim();
-                            const postcodeField = this.$root.querySelector('input[name$="[postcode]"]');
+                            const postcodeField = this.$refs.postcode;
                             const houseNumber = this.address.postnl_housenumber.trim();
                             const url = `<?= $escaper->escapeJs($checkoutView->getCheckoutUrl('address_postcode')) ?>`;
 
@@ -156,34 +150,24 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                                     response.status = 'warning';
 
                                     this.$nextTick(() => {
-                                        const streetField = this.$root.querySelector('input[name$="[street][]"]');
-                                        const houseNumberField = this.$root.querySelector('input[name$="[postnl_housenumber]"]');
-                                        const postcodeField = this.$root.querySelector('input[name$="[postcode]"]');
+                                        const streetField = this.$root.closest('form')?.querySelector('[name="street[0]"]');
+                                        const houseNumberField = this.$refs.postnl_housenumber;
+                                        const postcodeField = this.$refs.postcode;
 
                                         if (streetField) streetField.value = '';
 
-                                        if (ref === 'postnl_housenumber') {
-                                            if (houseNumberField) {
-                                                houseNumberField.value = '';
-                                                houseNumberField.focus();
-                                            }
-                                            this.address.postnl_housenumber = '';
-                                            wire.set('address.postnl_housenumber', '');
-                                        } else if (ref === 'postcode') {
-                                            if (postcodeField) {
-                                                postcodeField.value = '';
-                                                postcodeField.focus();
-                                            }
-                                            this.address.postcode = '';
-                                            wire.set('address.postcode', '');
+                                        if (ref === 'postnl_housenumber' && houseNumberField) {
+                                            houseNumberField.focus();
+                                        } else if (ref === 'postcode' && postcodeField) {
+                                            postcodeField.focus();
                                         }
                                     });
 
                                     wire.set('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify({
                                         street: '',
-                                        houseNumber: ref === 'postnl_housenumber' ? '' : houseNumber,
+                                        houseNumber: houseNumber,
                                         houseNumberAddition: this.address.postnl_housenumber_addition,
-                                        postcode: ref === 'postcode' ? '' : postcode,
+                                        postcode: postcode,
                                         city: ''
                                     }));
                                 }
