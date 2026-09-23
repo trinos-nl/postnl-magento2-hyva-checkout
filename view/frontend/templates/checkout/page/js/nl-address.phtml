@@ -94,7 +94,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                     }
 
                     this.address.postcode = '';
-                    wire.sync('address.postcode', '');
+                    wire.set('address.postcode', '');
 
                     const isDutchAddress = this.address.country_id === 'NL';
 
@@ -106,7 +106,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                         city: ''
                     };
 
-                    wire.sync('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify(updatedAddress));
+                    wire.set('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify(updatedAddress));
 
                     this.dispatchMessage('<?= $escaper->escapeJs(__('Please enter a valid Dutch postcode (e.g. 1234 AB).')) ?>');
 
@@ -168,18 +168,18 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                                                 houseNumberField.focus();
                                             }
                                             this.address.postnl_housenumber = '';
-                                            wire.sync('address.postnl_housenumber', '');
+                                            wire.set('address.postnl_housenumber', '');
                                         } else if (ref === 'postcode') {
                                             if (postcodeField) {
                                                 postcodeField.value = '';
                                                 postcodeField.focus();
                                             }
                                             this.address.postcode = '';
-                                            wire.sync('address.postcode', '');
+                                            wire.set('address.postcode', '');
                                         }
                                     });
 
-                                    wire.sync('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify({
+                                    wire.set('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify({
                                         street: '',
                                         houseNumber: ref === 'postnl_housenumber' ? '' : houseNumber,
                                         houseNumberAddition: this.address.postnl_housenumber_addition,
@@ -194,7 +194,7 @@ $checkoutView = $viewModels->require(CheckoutView::class);
                             this.errorMessage = '';
 
                             const addressLocal = this.getAddressParts(response);
-                            wire.sync('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify(addressLocal));
+                            wire.set('address.<?= $escaper->escapeJs(CheckoutFieldsApi::POSTNL_ADDRESS) ?>', JSON.stringify(addressLocal));
 
                         }, options.validationTimeout);
 

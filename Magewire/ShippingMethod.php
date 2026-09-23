@@ -113,7 +113,7 @@ class ShippingMethod extends Component
     public function updatedType(mixed $value): mixed
     {
         if (is_string($value)) {
-            $this->emit('postnl_select_delivery_type', ['value' => $value]);
+            $this->emit('postnl_select_delivery_type', ['data' => ['value' => $value]]);
         }
         return $value;
     }
