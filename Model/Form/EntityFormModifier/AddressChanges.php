@@ -38,6 +38,11 @@ class AddressChanges extends AbstractEntityFormModifier
     {
         $countryField = $form->getField(\Magento\Customer\Api\Data\AddressInterface::COUNTRY_ID);
 
+        // Hyvä Checkout 3 also builds address forms that never went through form:boot, so the PostNL fields are missing.
+        if (!$form->getField(CheckoutFieldsApi::POSTNL_ADDRESS)) {
+            return;
+        }
+
         if ($countryField && $countryField->getValue() === 'NL') {
             $this->sortFields($form);
             $form->getField(CheckoutFieldsApi::POSTNL_ADDRESS)->show();
